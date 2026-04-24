@@ -241,6 +241,12 @@ public class IdentityServiceImpl implements IdentityService {
 		if(getIndividualIdType(idvid).equals(IdType.UIN)){
 			return idvid;
 		}
+		String extractedUin = extractUinFromNinHandle(idvid);
+		if (extractedUin != null) {
+			logger.info("IdentityServiceImpl::getUinForIndividualId()::Resolved UIN {} from NIN handle {}", extractedUin,
+					idvid);
+			return extractedUin;
+		}
 		return getIdentity(idvid).getUIN();
 	}
 	
@@ -424,5 +430,24 @@ public class IdentityServiceImpl implements IdentityService {
 		} else {
 			return IdType.AID;
 		}
+	}
+
+	private String extractUinFromNinHandle(String individualId) {
+		if (individualId == null) {
+			return null;
+		}
+		String normalizedId = individualId.trim().toLowerCase();
+		if (!normalizedId.endsWith("@nin")) {
+			return null;
+		}
+		String ninWithoutSuffix = normalizedId.substring(0, normalizedId.length() - 4);
+		if (ninWithoutSuffix.length() <= 4) {
+			return null;
+		}
+		String possibleUin = ninWithoutSuffix.substring(4);
+		if (requestValidator.validateUin(possibleUin)) {
+			return possibleUin;
+		}
+		return null;
 	}
 }
