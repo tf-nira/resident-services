@@ -241,7 +241,10 @@ public class IdentityServiceImpl implements IdentityService {
 		if(getIndividualIdType(idvid).equals(IdType.UIN)){
 			return idvid;
 		}
-		return getIdentity(idvid).getUIN();
+		String resolvedUin = getIdentity(idvid).getUIN();
+		logger.info("IdentityServiceImpl::getUinForIndividualId()::Resolved UIN {} from ID Repo for individualId {}",
+				resolvedUin, idvid);
+		return resolvedUin;
 	}
 	
 	@Override

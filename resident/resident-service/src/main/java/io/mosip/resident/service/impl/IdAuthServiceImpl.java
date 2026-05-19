@@ -52,6 +52,7 @@ import io.mosip.resident.constant.AuthTypeStatus;
 import io.mosip.resident.constant.EventStatusFailure;
 import io.mosip.resident.constant.EventStatusInProgress;
 import io.mosip.resident.constant.EventStatusSuccess;
+import io.mosip.resident.constant.IdType;
 import io.mosip.resident.constant.LoggerFileConstant;
 import io.mosip.resident.constant.RequestType;
 import io.mosip.resident.constant.ResidentConstants;
@@ -419,10 +420,12 @@ public class IdAuthServiceImpl implements IdAuthService {
 	@Override
 	public String authTypeStatusUpdate(String individualId, Map<String, AuthTypeStatus> authTypeStatusMap, Map<String, Long> unlockForSecondsMap)
 			throws ApisResourceAccessException {
+		String normalizedIndividualId = resolveUinForAuthTypeStatus(individualId);
 		AuthTypeStatusRequestDto authTypeStatusRequestDto = new AuthTypeStatusRequestDto();
 		authTypeStatusRequestDto.setConsentObtained(true);
 		authTypeStatusRequestDto.setId(authTypeStatusId);
-		authTypeStatusRequestDto.setIndividualId(individualId);
+		authTypeStatusRequestDto.setIndividualId(normalizedIndividualId);
+		authTypeStatusRequestDto.setIndividualIdType(IdType.UIN.name());
 		authTypeStatusRequestDto.setVersion(internalAuthVersion);
 		authTypeStatusRequestDto.setRequestTime(DateUtils.formatToISOString(DateUtils.getUTCCurrentDateTime()));
 		List<io.mosip.resident.dto.AuthTypeStatus> authTypes = new ArrayList<>();
@@ -478,6 +481,17 @@ public class IdAuthServiceImpl implements IdAuthService {
 		}
 
 		return requestIdForAuthLockUnLock;
+	}
+
+	private String resolveUinForAuthTypeStatus(String individualId) throws ApisResourceAccessException {
+		try {
+			return identityService.getUinForIndividualId(individualId);
+		} catch (ResidentServiceCheckedException e) {
+			logger.error(LoggerFileConstant.SESSIONID.toString(), LoggerFileConstant.USERID.toString(), null,
+					"IdAuthServiceImpl::authTypeStatusUpdate()::Failed to resolve UIN from individualId "
+							+ individualId + ExceptionUtils.getStackTrace(e));
+			throw new ApisResourceAccessException("Could not resolve UIN for auth status api", e);
+		}
 	}
 
 	@Override

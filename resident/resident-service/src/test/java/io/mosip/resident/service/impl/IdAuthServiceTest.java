@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -49,6 +51,7 @@ import io.mosip.resident.constant.IdType;
 import io.mosip.resident.constant.ResidentErrorCode;
 import io.mosip.resident.dto.AuthError;
 import io.mosip.resident.dto.AuthResponseDTO;
+import io.mosip.resident.dto.AuthTypeStatusRequestDto;
 import io.mosip.resident.dto.AuthTypeStatusResponseDto;
 import io.mosip.resident.dto.AutnTxnDto;
 import io.mosip.resident.dto.AutnTxnResponseDto;
@@ -127,6 +130,27 @@ public class IdAuthServiceTest {
         Map<String, Long> unlockForSecondsMap=authTypes.stream().distinct().collect(Collectors.toMap(Function.identity(), str -> 10L));
         String requestId = idAuthService.authTypeStatusUpdate("1234567891", authTypeStatusMap, unlockForSecondsMap);
         assertTrue(requestId != null && !requestId.isEmpty());
+    }
+
+     @Test
+    public void testAuthTypeStatusUpdateUsesUinForNinHandle()
+            throws ApisResourceAccessException, ResidentServiceCheckedException {
+        AuthTypeStatusResponseDto authTypeStatusResponseDto = new AuthTypeStatusResponseDto();
+        when(restClient.postApi(any(), any(), any(), any())).thenReturn(authTypeStatusResponseDto);
+        when(identityService.getUinForIndividualId("cm262173153903@nin")).thenReturn("2173153903");
+        List<String> authTypes = new ArrayList<>();
+        authTypes.add("bio");
+        Map<String, AuthTypeStatus> authTypeStatusMap = authTypes.stream().distinct()
+                .collect(Collectors.toMap(Function.identity(), str -> AuthTypeStatus.LOCK));
+        Map<String, Long> unlockForSecondsMap = authTypes.stream().distinct()
+                .collect(Collectors.toMap(Function.identity(), str -> 10L));
+
+        idAuthService.authTypeStatusUpdate("cm262173153903@nin", authTypeStatusMap, unlockForSecondsMap);
+
+        ArgumentCaptor<AuthTypeStatusRequestDto> requestCaptor = ArgumentCaptor.forClass(AuthTypeStatusRequestDto.class);
+        verify(restClient).postApi(any(), any(), requestCaptor.capture(), any());
+        assertEquals("2173153903", requestCaptor.getValue().getIndividualId());
+        assertEquals(IdType.UIN.name(), requestCaptor.getValue().getIndividualIdType());
     }
 
     @Test(expected = ApisResourceAccessException.class)

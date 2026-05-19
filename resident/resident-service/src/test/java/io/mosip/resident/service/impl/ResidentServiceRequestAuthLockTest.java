@@ -5,6 +5,7 @@ package io.mosip.resident.service.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +75,9 @@ public class ResidentServiceRequestAuthLockTest {
 
 	@Mock
 	private ResidentServiceRestClient residentServiceRestClient;
+
+	@Mock
+	private IdentityServiceImpl identityServiceImpl;
 
 	@InjectMocks
 	private ResidentService residentService = new ResidentServiceImpl();
@@ -203,9 +207,22 @@ public class ResidentServiceRequestAuthLockTest {
 		AuthLockStatusResponseDtoV2 authLockStatusResponseDtoV2 = new AuthLockStatusResponseDtoV2();
 		authLockStatusResponseDtoV2.setAuthTypes(List.of(authLockTypeStatusDtoV2, authLockTypeStatusDtoV21));
 		responseWrapper.setResponse(authLockStatusResponseDtoV2);
+		Mockito.when(identityServiceImpl.getUinForIndividualId("7947240763")).thenReturn("7947240763");
 		Mockito.when(residentServiceRestClient.getApi((ApiName) any(), (List<String>) any(), (List<String>) any(), any(), any()))
 						.thenReturn(responseWrapper);
 		residentService.getAuthLockStatus("7947240763");
+	}
+
+	@Test
+	public void testGetAuthLockStatusUsesUinForNinHandle() throws ResidentServiceCheckedException, ApisResourceAccessException {
+		ResponseWrapper<AuthLockStatusResponseDtoV2> responseWrapper = new ResponseWrapper<>();
+		AuthLockStatusResponseDtoV2 authLockStatusResponseDtoV2 = new AuthLockStatusResponseDtoV2();
+		authLockStatusResponseDtoV2.setAuthTypes(List.of());
+		responseWrapper.setResponse(authLockStatusResponseDtoV2);
+		Mockito.when(identityServiceImpl.getUinForIndividualId("cm262173153903@nin")).thenReturn("2173153903");
+		Mockito.when(residentServiceRestClient.getApi(eq(ApiName.AUTHTYPESTATUSUPDATE), eq(List.of("2173153903")),
+				eq(List.of()), eq(List.of()), Mockito.<Class<ResponseWrapper>>any())).thenReturn(responseWrapper);
+		residentService.getAuthLockStatus("cm262173153903@nin");
 	}
 
 	@Test(expected = ResidentServiceCheckedException.class)
@@ -220,6 +237,7 @@ public class ResidentServiceRequestAuthLockTest {
 		responseWrapper.setResponse(authLockStatusResponseDtoV2);
 		responseWrapper.setErrors(List.of(new ServiceError(ResidentErrorCode.AUTH_LOCK_STATUS_FAILED.getErrorCode(),
 				ResidentErrorCode.AUTH_LOCK_STATUS_FAILED.getErrorMessage())));
+		Mockito.when(identityServiceImpl.getUinForIndividualId("7947240763")).thenReturn("7947240763");
 		Mockito.when(residentServiceRestClient.getApi((ApiName) any(), (List<String>) any(), (List<String>) any(), any(), any()))
 				.thenReturn(responseWrapper);
 		residentService.getAuthLockStatus("7947240763");
@@ -237,6 +255,7 @@ public class ResidentServiceRequestAuthLockTest {
 		responseWrapper.setResponse(authLockStatusResponseDtoV2);
 		responseWrapper.setErrors(List.of(new ServiceError(ResidentErrorCode.AUTH_LOCK_STATUS_FAILED.getErrorCode(),
 				ResidentErrorCode.AUTH_LOCK_STATUS_FAILED.getErrorMessage())));
+		Mockito.when(identityServiceImpl.getUinForIndividualId("7947240763")).thenReturn("7947240763");
 		Mockito.when(residentServiceRestClient.getApi((ApiName) any(), (List<String>) any(), (List<String>) any(), any(), any()))
 				.thenThrow(new ApisResourceAccessException());
 		residentService.getAuthLockStatus("7947240763");
@@ -255,6 +274,7 @@ public class ResidentServiceRequestAuthLockTest {
 		AuthLockStatusResponseDtoV2 authLockStatusResponseDtoV2 = new AuthLockStatusResponseDtoV2();
 		authLockStatusResponseDtoV2.setAuthTypes(List.of());
 		responseWrapper.setResponse(authLockStatusResponseDtoV2);
+		Mockito.when(identityServiceImpl.getUinForIndividualId("7947240763")).thenReturn("7947240763");
 		Mockito.when(residentServiceRestClient.getApi((ApiName) any(), (List<String>) any(), (List<String>) any(), any(), any()))
 				.thenReturn(responseWrapper);
 		residentService.getAuthLockStatus("7947240763");

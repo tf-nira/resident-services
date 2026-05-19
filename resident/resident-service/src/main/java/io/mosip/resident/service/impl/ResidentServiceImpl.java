@@ -1428,8 +1428,9 @@ public class ResidentServiceImpl implements ResidentService {
 			throws ResidentServiceCheckedException {
 		ResponseWrapper<AuthLockOrUnLockRequestDtoV2> response = new ResponseWrapper<>();
 		try {
+			String normalizedIndividualId = identityServiceImpl.getUinForIndividualId(individualId);
 			ResponseWrapper<AuthLockStatusResponseDtoV2> responseWrapper = JsonUtil.convertValue(
-					residentServiceRestClient.getApi(ApiName.AUTHTYPESTATUSUPDATE, List.of(individualId), List.of(),
+					residentServiceRestClient.getApi(ApiName.AUTHTYPESTATUSUPDATE, List.of(normalizedIndividualId), List.of(),
 							List.of(), ResponseWrapper.class),
 					new TypeReference<ResponseWrapper<AuthLockStatusResponseDtoV2>>() {
 					});
