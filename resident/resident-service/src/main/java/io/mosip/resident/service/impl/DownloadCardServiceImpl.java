@@ -472,9 +472,7 @@ public class DownloadCardServiceImpl implements DownloadCardService {
 			}
 			Tuple2<Boolean, ResidentTransactionEntity> tupleResponse = idAuthService.validateOtpV2(transactionId, idValue,
 					downloadCardRequestDTOMainRequestDTO.getRequest().getOtp(), RequestType.GET_MY_ID);
-			logger.info("Tuple Response: ", tupleResponse.getT2());
 			if (tupleResponse.getT2() != null) {
-				logger.info("Tuple Response: ", tupleResponse.getT1());
 				if (tupleResponse.getT1()) {
 					nin = individualIdAndType.getT1().toUpperCase();
 					Map<String, Object> resp = new HashMap<>();
