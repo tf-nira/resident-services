@@ -476,7 +476,7 @@ public class DownloadCardServiceImpl implements DownloadCardService {
 			if (tupleResponse.getT2() != null) {
 				logger.info("Tuple Response: ", tupleResponse.getT1());
 				if (tupleResponse.getT1()) {
-					nin = idValue.toUpperCase();
+					nin = individualIdAndType.getT1().toUpperCase();
 					Map<String, Object> resp = new HashMap<>();
 					resp.put("nin", nin);
 					responseWrapper.setResponse(resp);
