@@ -30,4 +30,6 @@ public interface DownloadCardService {
     Tuple2<ResponseWrapper<VidDownloadCardResponseDto>, String> getVidCardEventId(String vid, int timeZoneOffset, String locale) throws BaseCheckedException;
 
     ResponseWrapper<CheckStatusResponseDTO> getIndividualIdStatus(String vid) throws ApisResourceAccessException, IOException, ResidentServiceCheckedException;
+
+	ResponseWrapper<Object> getNINFromIndividualId(String individualId) throws ApisResourceAccessException, IOException, ResidentServiceCheckedException;
 }

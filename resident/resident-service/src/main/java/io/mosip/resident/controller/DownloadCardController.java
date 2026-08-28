@@ -205,4 +205,34 @@ public class DownloadCardController {
         return ResponseEntity.ok()
                 .body(responseWrapper);
     }
+
+	@Timed(value=API_RESPONSE_TIME_ID,description=API_RESPONSE_TIME_DESCRIPTION, percentiles = {0.5, 0.9, 0.95, 0.99} )
+	@PostMapping("/getNin")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Get NIN from IDREPO", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ResponseWrapper.class)))),
+			@ApiResponse(responseCode = "400", description = "IDREPO Call Failed", content = @Content(schema = @Schema(hidden = true))),
+			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(hidden = true))),
+			@ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(hidden = true))),
+			@ApiResponse(responseCode = "404", description = "Not Found", content = @Content(schema = @Schema(hidden = true))) })
+	public ResponseEntity<Object> getNin(
+			@Validated @RequestBody MainRequestDTO<DownloadCardRequestDTO> downloadCardRequestDTOMainRequestDTO,
+			@RequestHeader(name = "time-zone-offset", required = false, defaultValue = "0") int timeZoneOffset,
+			@RequestHeader(name = "locale", required = false) String locale)
+			throws BaseCheckedException, IOException {
+		logger.debug("DownloadCardController::getNIN()::entry");
+		try {
+			requestValidator.validateDownloadCardRequest(downloadCardRequestDTOMainRequestDTO);
+			String individualId = downloadCardRequestDTOMainRequestDTO.getRequest().getIndividualId();
+			ResponseWrapper<Object> response = downloadCardService.getNINFromIndividualId(individualId);
+			logger.debug("DownloadCardController::getNIN()::exit");
+			return ResponseEntity.ok(response);
+		} catch (ResidentServiceException | InvalidInputException e) {
+			auditUtil.setAuditRequestDto(AuditEnum.AID_STAGE_FAILURE);
+			logger.error(LoggerFileConstant.SESSIONID.toString(), LoggerFileConstant.APPLICATIONID.toString(),
+					LoggerFileConstant.APPLICATIONID.toString(), ExceptionUtils.getStackTrace(e));
+			e.setMetadata(Map.of(ResidentConstants.REQ_RES_ID,
+					environment.getProperty(ResidentConstants.CHECK_STATUS_INDIVIDUAL_ID)));
+			throw e;
+		}
+	}
 }
