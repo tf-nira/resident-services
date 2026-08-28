@@ -222,8 +222,7 @@ public class DownloadCardController {
 		logger.debug("DownloadCardController::getNIN()::entry");
 		try {
 			requestValidator.validateDownloadCardRequest(downloadCardRequestDTOMainRequestDTO);
-			String individualId = downloadCardRequestDTOMainRequestDTO.getRequest().getIndividualId();
-			ResponseWrapper<Object> response = downloadCardService.getNINFromIndividualId(individualId);
+			ResponseWrapper<Object> response = downloadCardService.getNINFromIndividualId(downloadCardRequestDTOMainRequestDTO);
 			logger.debug("DownloadCardController::getNIN()::exit");
 			return ResponseEntity.ok(response);
 		} catch (ResidentServiceException | InvalidInputException e) {
