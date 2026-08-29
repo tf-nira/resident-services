@@ -455,42 +455,47 @@ public class DownloadCardServiceImpl implements DownloadCardService {
 	}
 
 	@Override
-	public ResponseWrapper<Object> getNINFromIndividualId(String individualId)
-			throws ApisResourceAccessException, IOException, ResidentServiceCheckedException {
+	public ResponseWrapper<Object> getNINFromIndividualId(MainRequestDTO<DownloadCardRequestDTO> downloadCardRequestDTOMainRequestDTO)
+			throws ApisResourceAccessException,  OtpValidationFailedException, IOException, ResidentServiceCheckedException {
 		logger.debug("DownloadCardServiceImpl::getNINFromIndividualId()::entry");
 		ResponseWrapper<Object> responseWrapper = new ResponseWrapper<>();
+		String nin = null;
+		String individualId = downloadCardRequestDTOMainRequestDTO.getRequest().getIndividualId();
+		String eventId = ResidentConstants.NOT_AVAILABLE;
 		try {
-			String nin = null;
-			String rid = getRidForIndividualId(individualId);
-			if (rid != null) {
-				IdResponseDTO1 idResponseDTO1 = (IdResponseDTO1) utility.getIdentityData(rid, IdResponseDTO1.class);
-				if (idResponseDTO1.getErrors() != null && !idResponseDTO1.getErrors().isEmpty()) {
-					throw new ResidentServiceCheckedException(
-							ResidentErrorCode.API_RESOURCE_ACCESS_EXCEPTION.getErrorCode(), idResponseDTO1.getErrors().get(0).getErrorCode()
-									+ " --> " + idResponseDTO1.getErrors().get(0).getMessage());
-				}
-				if (idResponseDTO1.getResponse() != null) {
-					ObjectMapper mapper = new ObjectMapper();
-
-					Map<String, Object> responseMap  =
-							mapper.convertValue(idResponseDTO1.getResponse(), Map.class);
-					Map<String, Object> identityMap =
-							(Map<String, Object>) responseMap.get("identity");
-
-					nin = (String) identityMap.get("NIN");
+			String transactionId = downloadCardRequestDTOMainRequestDTO.getRequest().getTransactionId();
+			Tuple2<String, IdType> individualIdAndType = identityService.getIdAndTypeForIndividualId(individualId);
+			String idValue = individualIdAndType.getT1();
+			IdType idType = individualIdAndType.getT2();
+			if (idType == IdType.HANDLE && !idValue.endsWith("@nin")) {
+				idValue = idValue + "@nin";
+			}
+			Tuple2<Boolean, ResidentTransactionEntity> tupleResponse = idAuthService.validateOtpV2(transactionId, idValue,
+					downloadCardRequestDTOMainRequestDTO.getRequest().getOtp(), RequestType.GET_MY_ID);
+			if (tupleResponse.getT2() != null) {
+				if (tupleResponse.getT1()) {
+					nin = individualIdAndType.getT1().toUpperCase();
+					Map<String, Object> resp = new HashMap<>();
+					resp.put("nin", nin);
+					responseWrapper.setResponse(resp);
+				} else {
+					logger.error(LoggerFileConstant.SESSIONID.toString(), LoggerFileConstant.APPLICATIONID.toString(),
+							LoggerFileConstant.APPLICATIONID.toString(),
+							ResidentErrorCode.OTP_VALIDATION_FAILED.getErrorMessage());
+					throw new OtpValidationFailedException(ResidentErrorCode.OTP_VALIDATION_FAILED.getErrorCode(),
+							ResidentErrorCode.OTP_VALIDATION_FAILED.getErrorMessage());
 				}
 			}
-			Map<String, Object> resp = new HashMap<>();
-			resp.put("nin", nin);
-			responseWrapper.setResponse(resp);
 			logger.debug("IDREPO GET NIN completed successfully");
-		} catch (Exception e) {
-			logger.error("Error while fetching NIN", e);
+		} catch (ResidentCredentialServiceException | ResidentServiceCheckedException | OtpValidationFailedException e) {
+			e.setMetadata(Map.of(ResidentConstants.EVENT_ID, eventId));
 			throw e;
+		} catch (Exception e) {
+			throw new ResidentServiceException(ResidentErrorCode.CARD_NOT_READY.getErrorCode(),
+					ResidentErrorCode.CARD_NOT_READY.getErrorMessage(), e, Map.of(ResidentConstants.EVENT_ID, eventId));
 		}
 		return responseWrapper;
 	}
-
 
 	private String getRidForIndividualId(String individualId) {
 		IdType idType = identityService.getIndividualIdType(individualId);

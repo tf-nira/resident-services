@@ -31,5 +31,5 @@ public interface DownloadCardService {
 
     ResponseWrapper<CheckStatusResponseDTO> getIndividualIdStatus(String vid) throws ApisResourceAccessException, IOException, ResidentServiceCheckedException;
 
-	ResponseWrapper<Object> getNINFromIndividualId(String individualId) throws ApisResourceAccessException, IOException, ResidentServiceCheckedException;
+	ResponseWrapper<Object> getNINFromIndividualId(MainRequestDTO<DownloadCardRequestDTO> downloadCardRequestDTOMainRequestDTO) throws ApisResourceAccessException,  OtpValidationFailedException, IOException, ResidentServiceCheckedException;
 }
